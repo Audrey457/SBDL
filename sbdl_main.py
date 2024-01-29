@@ -1,6 +1,6 @@
 import sys
 
-from lib import Utils, DataLoader
+from lib import Utils, DataLoader, ConfigLoader
 from lib.logger import Log4j
 
 if __name__ == '__main__':
@@ -12,6 +12,11 @@ if __name__ == '__main__':
     job_run_env = sys.argv[1].upper()
     load_date = sys.argv[2]
 
+    #Récupérer informations de configuration
+    conf = ConfigLoader.get_config(job_run_env)
+    enable_hive = True if conf["enable.hive"] == "true" else False
+    hive_db = conf["hive.database"]
+
     #Créer session spark
     spark = Utils.get_spark_session(job_run_env)
 
@@ -19,15 +24,15 @@ if __name__ == '__main__':
     logger = Log4j(spark)
 
     #Lire la df account et la transformer
-    df_account = DataLoader.read_accounts(spark, job_run_env,False,"" )
+    df_account = DataLoader.read_accounts(spark, job_run_env,enable_hive,hive_db )
     df_account.show()
 
     #Lire la df parties et la transformer
-    df_parties = DataLoader.read_parties(spark, job_run_env, False, "")
+    df_parties = DataLoader.read_parties(spark, job_run_env, enable_hive, hive_db)
     df_parties.show()
 
     #Lire les adresses et les transformer
-    df_addresses = DataLoader.read_address(spark, job_run_env, False, "")
+    df_addresses = DataLoader.read_address(spark, job_run_env, enable_hive, hive_db)
     df_addresses.show()
 
     #Joindre les parties et les adresses
