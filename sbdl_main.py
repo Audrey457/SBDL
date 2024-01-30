@@ -46,11 +46,12 @@ if __name__ == '__main__':
 
     #Ajouter le header event => on obtient le final_df
     final_df = apply_header(spark, df_account_parties_addresses)
-    final_df.show()
 
     #Pour envoyer une dataframe à Kafka, il faut que ce soit une df à 2 colonnes
     #La première est une clé, la seconde une valeur
     #Clé = contractIdentifier.newValue
     #Valeur = packager tout (*) sous forme de structure
     #ça doit être sous format json (to_json)
-
+    kafka_kv_df = final_df.select(col("payload.contractIdentifier.newValue").alias("key"),
+                                  to_json(struct("*")).alias("value"))
+    kafka_kv_df.show()
