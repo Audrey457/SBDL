@@ -29,23 +29,24 @@ if __name__ == '__main__':
     #Lire la df account et la transformer
     df_account = DataLoader.read_accounts(spark, job_run_env,enable_hive,hive_db )
     df_account_tf = get_contract(df_account)
-    #df_account_tf.show()
 
     #Lire la df parties et la transformer
     df_parties = DataLoader.read_parties(spark, job_run_env, enable_hive, hive_db)
     df_parties_tf = get_relations(df_parties)
-    #df_parties_tf.show()
 
     #Lire les adresses et les transformer
     df_addresses = DataLoader.read_address(spark, job_run_env, enable_hive, hive_db)
     df_addresses_tf = get_address(df_addresses)
-    #df_addresses_tf.show()
 
     #Joindre les parties et les adresses
+    df_parties_addresses = join_party_adress(df_parties_tf, df_addresses_tf)
 
     #Joindre les accounts aux parties_adress
+    df_account_parties_addresses = join_contract_party(df_account_tf, df_parties_addresses)
 
     #Ajouter le header event => on obtient le final_df
+    final_df = apply_header(spark, df_account_parties_addresses)
+    final_df.show()
 
     #Pour envoyer une dataframe à Kafka, il faut que ce soit une df à 2 colonnes
     #La première est une clé, la seconde une valeur

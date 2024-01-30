@@ -72,10 +72,40 @@ et créer une liste (collect_list)
 
 '''
 def join_party_adress(p_df, a_df):
-    return
+    return p_df.join(a_df, "party_id", "left_outer") \
+        .groupBy("account_id") \
+        .agg(collect_list(struct("partyIdentifier",
+                                 "partyRelationshipType",
+                                 "partyRelationStartDateTime",
+                                 "partyAddress"
+                                 ).alias("partyDetails")
+                          ).alias("partyRelations"))
 
 '''
 Prend une df finale et ajoute un header event a chaque enregistrement
 '''
 def apply_header(spark, df):
-    return
+    header_info = [("SBDL-Contract", 1, 0), ]
+    header_df = spark.createDataFrame(header_info) \
+        .toDF("eventType", "majorSchemaVersion", "minorSchemaVersion")
+
+    event_df = header_df.hint("broadcast").crossJoin(df) \
+        .select(struct(expr("uuid()").alias("eventIdentifier"),
+                       col("eventType"), col("majorSchemaVersion"), col("minorSchemaVersion"),
+                       lit(date_format(current_timestamp(), "yyyy-MM-dd'T'HH:mm:ssZ")).alias("eventDateTime")
+                       ).alias("eventHeader"),
+                array(struct(lit("contractIdentifier").alias("keyField"),
+                             col("account_id").alias("keyValue")
+                             )).alias("keys"),
+                struct(col("contractIdentifier"),
+                       col("sourceSystemIdentifier"),
+                       col("contactStartDateTime"),
+                       col("contractTitle"),
+                       col("taxIdentifier"),
+                       col("contractBranchCode"),
+                       col("contractCountry"),
+                       col("partyRelations")
+                       ).alias("payload")
+                )
+
+    return event_df
